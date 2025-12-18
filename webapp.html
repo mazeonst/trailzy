@@ -8,110 +8,47 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
-    :root{
-      --bg: #f6f7fb;
-      --card: #ffffff;
-      --border: #e5e7ee;
-      --text: #1f2937;
-      --muted: #6b7280;
-      --accent: #3b82f6;
-    }
-    html,body,#map{height:100%;margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--text)}
-    #map{z-index:1}
-    .ui{position:absolute;inset:0;pointer-events:none}
-    .sidebar{
-      position:absolute;left:12px;top:12px;bottom:12px;width:120px;
-      display:flex;flex-direction:column;gap:12px;
-      background:rgba(255,255,255,.92);backdrop-filter:blur(6px);
-      border-radius:18px;padding:14px 12px;box-shadow:0 14px 40px rgba(0,0,0,.16);
-      pointer-events:auto;border:1px solid var(--border);
-    }
-    .sidebar__title{font-weight:700;font-size:14px;margin-bottom:6px}
-    .friends{
-      display:flex;flex-direction:column;gap:10px;overflow:auto;flex:1;
-      padding-right:2px;
-    }
-    .friend-avatar{
-      width:64px;height:64px;border-radius:18px;border:2px solid var(--border);
-      object-fit:cover;cursor:pointer;transition:transform .15s, box-shadow .15s, border-color .15s;
-      box-shadow:0 8px 18px rgba(0,0,0,.12);background:linear-gradient(120deg,#eef2ff,#f8fafc);
-    }
-    .friend-avatar:hover{transform:translateY(-3px);box-shadow:0 16px 28px rgba(0,0,0,.18);border-color:var(--accent)}
-    .friend-avatar.offline{filter:grayscale(.4);opacity:.75}
+    html,body,#map{height:100%;margin:0}
     .panel{
-      position:absolute;left:152px;top:12px;
-      background:rgba(255,255,255,.94);backdrop-filter:blur(6px);padding:14px 16px;border-radius:18px;
-      box-shadow:0 14px 40px rgba(0,0,0,.16);
-      pointer-events:auto;max-width:420px;border:1px solid var(--border);
+      position:absolute;z-index:999;left:12px;top:12px;
+      background:#fff;padding:10px;border-radius:12px;
+      box-shadow:0 8px 24px rgba(0,0,0,.12);
+      font-family:system-ui; max-width: 360px;
     }
-    .row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}
-    button,input{padding:10px 12px;border-radius:12px;border:1px solid var(--border);font-size:14px}
-    button{background:linear-gradient(120deg,#eef2ff,#e0f2fe);cursor:pointer;transition:transform .12s, box-shadow .12s;border-color:#d5d8e3}
-    button:hover{transform:translateY(-1px);box-shadow:0 8px 18px rgba(0,0,0,.14)}
-    button:active{transform:translateY(0);box-shadow:none}
-    .muted{font-size:12px;color:var(--muted)}
-    .badge{padding:4px 8px;border-radius:10px;background:#ecfdf3;color:#166534;font-size:12px;font-weight:600;border:1px solid #bbf7d0}
-    .section-title{font-weight:700;margin:10px 0 4px}
-    .status-line{font-size:13px;color:var(--muted);display:flex;gap:6px;align-items:center}
-    .status-dot{width:8px;height:8px;border-radius:50%;background:var(--accent)}
-    .me-chip{
-      position:absolute;right:16px;top:16px;display:flex;align-items:center;gap:10px;
-      padding:10px 12px;border-radius:16px;background:rgba(255,255,255,.94);
-      box-shadow:0 10px 28px rgba(0,0,0,.18);pointer-events:auto;cursor:pointer;border:1px solid var(--border);
-      transition:transform .12s, box-shadow .12s;
-    }
-    .me-chip:hover{transform:translateY(-2px);box-shadow:0 16px 32px rgba(0,0,0,.2)}
-    .me-chip__avatar{width:48px;height:48px;border-radius:14px;object-fit:cover;border:2px solid #fff;box-shadow:0 6px 16px rgba(0,0,0,.14)}
-    .me-chip__name{font-weight:700;font-size:14px}
-    .me-chip__subtitle{font-size:12px;color:var(--muted)}
-    .settings{position:absolute;right:16px;top:92px;min-width:260px;max-width:340px;background:rgba(255,255,255,.96);
-      border-radius:16px;padding:14px 16px;box-shadow:0 16px 36px rgba(0,0,0,.2);pointer-events:auto;border:1px solid var(--border);display:none}
-    .settings.active{display:block}
-    .avatar-icon{border-radius:18%;border:2px solid #fff;box-shadow:0 4px 12px rgba(0,0,0,.25);object-fit:cover}
-    .avatar-icon.me-icon{border-color:var(--accent)}
+    .row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+    button,input{padding:8px 10px;border-radius:10px;border:1px solid #ddd}
+    button{background:#f7f7f7;cursor:pointer}
+    .muted{font-size:12px;opacity:.7}
+    code{background:#f1f1f1;padding:2px 6px;border-radius:6px}
+    .friends{display:flex;flex-direction:column;gap:8px;max-height:260px;overflow:auto;margin-top:6px}
+    .friend{display:flex;align-items:center;gap:10px;padding:8px;border:1px solid #eee;border-radius:10px;cursor:pointer;transition:.15s background}
+    .friend:hover{background:#f5f7fb}
+    .friend__avatar{width:42px;height:42px;border-radius:50%;object-fit:cover;border:1px solid #e4e4e4;flex-shrink:0}
+    .friend__title{font-weight:600;font-size:14px}
+    .friend__subtitle{font-size:12px;color:#555}
+    .friend__status{margin-left:auto;font-size:12px;color:#777}
+    .avatar-icon{border-radius:50%;border:2px solid #fff;box-shadow:0 4px 12px rgba(0,0,0,.25);object-fit:cover}
   </style>
 </head>
 <body>
   <div id="map"></div>
 
-  <div class="ui">
-    <div class="sidebar">
-      <div class="sidebar__title">Друзья</div>
-      <div id="friends" class="friends"></div>
+  <div class="panel">
+    <div class="row">
+      <button id="btnRefresh">🔄 Обновить</button>
+      <button id="btnInvite">➕ Инвайт</button>
     </div>
 
-    <div class="panel">
-      <div class="row">
-        <button id="btnRefresh">🔄 Обновить</button>
-        <button id="btnInvite">➕ Инвайт</button>
-      </div>
-
-      <div class="row">
-        <input id="code" placeholder="Код инвайта" />
-        <button id="btnAccept">✅ Принять</button>
-      </div>
-
-      <div class="status-line"><span class="status-dot"></span><span id="status">...</span></div>
-      <div class="muted">ID и профиль берутся из Telegram Mini App.</div>
-
-      <div class="section-title">Лайфхаки</div>
-      <div class="muted">1) В боте нажми «📍 Отправить LIVE-локацию», чтобы твоя точка появилась на карте.</div>
-      <div class="muted">2) Нажимай аватарки слева, чтобы фокусироваться на друге.</div>
+    <div class="row">
+      <input id="code" placeholder="Код инвайта" />
+      <button id="btnAccept">✅ Принять</button>
     </div>
 
-    <div id="meChip" class="me-chip">
-      <img id="meAvatar" class="me-chip__avatar" alt="me" />
-      <div>
-        <div id="meName" class="me-chip__name">...</div>
-        <div id="meSubtitle" class="me-chip__subtitle">...</div>
-      </div>
-    </div>
+    <div class="muted" id="status">...</div>
+    <div class="muted">ID берётся из Telegram WebApp контекста.</div>
 
-    <div id="settings" class="settings">
-      <div class="section-title">Настройки</div>
-      <div class="muted" style="margin-bottom:8px">Открой как Telegram Mini App, отправь live-локацию боту, нажми «Обновить». Твой пин появится на карте вместе с друзьями.</div>
-      <div class="badge">Beta · Mini App</div>
-    </div>
+    <div class="muted" style="margin-top:6px">Твои друзья</div>
+    <div id="friends" class="friends"></div>
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -119,196 +56,143 @@
     const tg = window.Telegram?.WebApp;
     tg?.ready();
 
-    const API_PREFIX = location.pathname.startsWith('/trailzy') ? '/trailzy' : '';
     const userId = tg?.initDataUnsafe?.user?.id;
     const username = tg?.initDataUnsafe?.user?.username;
     const name = [tg?.initDataUnsafe?.user?.first_name, tg?.initDataUnsafe?.user?.last_name]
       .filter(Boolean)
-      .join(' ');
-
-    function applyTheme(params){
-      if (!params) return;
-      const map = {
-        bg_color: '--bg',
-        secondary_bg_color: '--card',
-        text_color: '--text',
-        hint_color: '--muted',
-        button_color: '--accent',
-      };
-      Object.entries(map).forEach(([key, cssVar]) => {
-        if (params[key]) document.documentElement.style.setProperty(cssVar, params[key]);
-      });
-    }
-    applyTheme(tg?.themeParams);
-    tg?.onEvent?.('themeChanged', () => applyTheme(tg.themeParams));
-
-    const statusEl = document.getElementById('status');
-    const friendsEl = document.getElementById('friends');
-    const meAvatarEl = document.getElementById('meAvatar');
-    const meNameEl = document.getElementById('meName');
-    const meSubtitleEl = document.getElementById('meSubtitle');
-    const meChipEl = document.getElementById('meChip');
-    const settingsEl = document.getElementById('settings');
+      .join(" ");
+    const statusEl = document.getElementById("status");
+    const friendsEl = document.getElementById("friends");
 
     function setStatus(t){ statusEl.textContent = t; }
 
-    const mapInstance = L.map('map', { zoomControl:false }).setView([52.37, 4.90], 12);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(mapInstance);
+    const map = L.map("map").setView([52.37, 4.90], 12);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(map);
 
     const markers = new Map();
     const defaultAvatar =
-      'data:image/svg+xml;utf8,' +
-      encodeURIComponent(`<?xml version="1.0"?><svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg"><rect width="120" height="120" rx="24" fill="#2563eb"/><text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" font-size="54" font-family="Arial" fill="white">👥</text></svg>`);
+      "data:image/svg+xml;utf8," +
+      encodeURIComponent(`<?xml version="1.0"?><svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg"><rect width="120" height="120" rx="20" fill="#1d9bf0"/><text x="50%" y="52%" dominant-baseline="middle" text-anchor="middle" font-size="48" font-family="Arial" fill="white">👤</text></svg>`);
 
     async function api(path, opts={}) {
-      const r = await fetch(`${API_PREFIX}${path}`, {
+      const r = await fetch("/trailzy" + path, {
         ...opts,
-        headers: { 'Content-Type':'application/json', ...(opts.headers||{}) }
+        headers: { "Content-Type":"application/json", ...(opts.headers||{}) }
       });
       if (!r.ok) throw new Error(await r.text());
       return r.json();
     }
 
     function renderFriends(friends){
-      friendsEl.innerHTML = '';
+      friendsEl.innerHTML = "";
       if (!friends.length){
         friendsEl.innerHTML = '<div class="muted">Друзей пока нет.</div>';
         return;
       }
 
       friends.forEach(f => {
-        const img = document.createElement('img');
-        img.className = 'friend-avatar' + (f.location ? '' : ' offline');
+        const el = document.createElement("div");
+        el.className = "friend";
+        el.onclick = () => {
+          const marker = markers.get(f.id);
+          if (marker){
+            map.setView(marker.getLatLng(), 14);
+            marker.openPopup();
+          }
+        };
+
+        const img = document.createElement("img");
+        img.className = "friend__avatar";
         img.src = f.avatar_url || defaultAvatar;
         img.alt = f.name || `Friend ${f.id}`;
-        img.title = f.location ? `${f.name || 'Друг'}\nОбновлено: ${new Date(f.location.updated_at*1000).toLocaleString()}` : `${f.name || 'Друг'}\nНет локации`;
-        img.onclick = () => focusOn(f.id);
-        friendsEl.appendChild(img);
+        el.appendChild(img);
+
+        const textWrap = document.createElement("div");
+        const title = document.createElement("div");
+        title.className = "friend__title";
+        title.textContent = f.name || `Friend ${f.id}`;
+        const subtitle = document.createElement("div");
+        subtitle.className = "friend__subtitle";
+        subtitle.textContent = f.username ? `@${f.username}` : `ID: ${f.id}`;
+        textWrap.appendChild(title);
+        textWrap.appendChild(subtitle);
+        el.appendChild(textWrap);
+
+        const status = document.createElement("div");
+        status.className = "friend__status";
+        status.textContent = f.location ? "🟢 на карте" : "⚪ нет локации";
+        el.appendChild(status);
+
+        friendsEl.appendChild(el);
       });
     }
 
-    function makeLabel(person, isMe=false){
-      const updated = person.location ? new Date(person.location.updated_at*1000).toLocaleString() : '—';
-      const headline = person.name || (isMe ? 'Ты' : 'Друг');
-      const uname = person.username ? `@${person.username}` : `ID: ${person.id}`;
-      return `${headline}\n${uname}\nОбновлено: ${updated}${isMe ? '\nЭто ты' : ''}`;
+    function makeLabel(friend){
+      const updated = friend.location ? new Date(friend.location.updated_at*1000).toLocaleString() : "—";
+      return `${friend.name || "Друг"}\n@${friend.username || "без ника"}\nОбновлено: ${updated}`;
     }
 
-    function avatarIcon(url, isMe=false){
+    function avatarIcon(url){
       return L.icon({
         iconUrl: url || defaultAvatar,
-        iconSize: [54,54],
-        className: isMe ? 'avatar-icon me-icon' : 'avatar-icon',
+        iconSize: [48,48],
+        className: "avatar-icon",
       });
-    }
-
-    function upsertMarker(person, isMe=false){
-      if (!person.location) return;
-      let m = markers.get(person.id);
-      const label = makeLabel(person, isMe);
-      if (!m){
-        m = L.marker([person.location.lat, person.location.lon], { icon: avatarIcon(person.avatar_url, isMe) })
-          .addTo(mapInstance)
-          .bindPopup(label);
-        markers.set(person.id, m);
-      } else {
-        m.setLatLng([person.location.lat, person.location.lon]).setPopupContent(label);
-      }
-    }
-
-    function focusOn(id){
-      const marker = markers.get(id);
-      if (marker){
-        mapInstance.setView(marker.getLatLng(), 14);
-        marker.openPopup();
-      }
-    }
-
-    function fitToMarkers(){
-      if (!markers.size) return;
-      const group = L.featureGroup(Array.from(markers.values()));
-      mapInstance.fitBounds(group.getBounds().pad(0.35));
-    }
-
-    function updateMeChip(me){
-      meAvatarEl.src = me.avatar_url || defaultAvatar;
-      meNameEl.textContent = me.name || name || username || 'Ты';
-      meSubtitleEl.textContent = me.username ? `@${me.username}` : `ID: ${me.id}`;
-    }
-
-    function syncMarkers(me, friends){
-      const activeIds = new Set();
-      if (me.location){
-        upsertMarker(me, true);
-        activeIds.add(me.id);
-      }
-      friends.forEach(f => {
-        if (!f.location) return;
-        upsertMarker(f, false);
-        activeIds.add(f.id);
-      });
-
-      for (const [id, marker] of markers.entries()){
-        if (!activeIds.has(id)){
-          mapInstance.removeLayer(marker);
-          markers.delete(id);
-        }
-      }
-
-      if (markers.size) fitToMarkers();
     }
 
     async function refresh() {
       if (!userId) {
-        setStatus('❗ Открой через Telegram WebApp (кнопку в боте)');
+        setStatus("❗ Открой через Telegram WebApp (кнопку в боте)");
         return;
       }
-      const [me, friends] = await Promise.all([
-        api(`/api/me-full?user_id=${encodeURIComponent(userId)}`),
-        api(`/api/friends-full?user_id=${encodeURIComponent(userId)}`),
-      ]);
+      const me = await api(`/api/me?user_id=${encodeURIComponent(userId)}`);
+      const friends = await api(`/api/friends-full?user_id=${encodeURIComponent(userId)}`);
+      const locs = friends.friends.filter(f => !!f.location);
+
+      // remove missing
+      const ids = new Set(locs.map(x => x.id));
+      for (const [id, m] of markers.entries()){
+        if (!ids.has(id)) { map.removeLayer(m); markers.delete(id); }
+      }
+
+      // upsert
+      locs.forEach(l => {
+        let m = markers.get(l.id);
+        const label = makeLabel(l);
+        if (!m){
+          m = L.marker([l.location.lat, l.location.lon], { icon: avatarIcon(l.avatar_url) }).addTo(map).bindPopup(label);
+          markers.set(l.id, m);
+        } else {
+          m.setLatLng([l.location.lat, l.location.lon]).setPopupContent(label);
+        }
+      });
 
       renderFriends(friends.friends);
-      updateMeChip(me);
-      syncMarkers(me, friends.friends);
-
-      const friendsWithGeo = friends.friends.filter(f => f.location).length;
-      const meOnMap = Boolean(me.location);
-      setStatus(`Ты: ${meOnMap ? 'на карте' : 'нет гео'} • Друзья на карте: ${friendsWithGeo}/${friends.friends.length}`);
+      const meName = me.name || name || username || `ID ${userId}`;
+      setStatus(`Вы: ${meName} | Друзей на карте: ${locs.length}`);
+      if (locs.length) map.setView([locs[0].location.lat, locs[0].location.lon], 13);
     }
 
-    document.getElementById('btnRefresh').onclick = () => refresh().catch(e => setStatus('Ошибка: ' + e.message));
+    document.getElementById("btnRefresh").onclick = () => refresh().catch(e => setStatus("Ошибка: " + e.message));
 
-    document.getElementById('btnInvite').onclick = async () => {
+    document.getElementById("btnInvite").onclick = async () => {
       try {
-        const res = await api(`/api/invite?user_id=${encodeURIComponent(userId)}`, { method:'POST', body:'{}' });
-        alert('Инвайт код:\n' + res.code);
-      } catch(e) { setStatus('Ошибка: ' + e.message); }
+        const res = await api(`/api/invite?user_id=${encodeURIComponent(userId)}`, { method:"POST", body:"{}" });
+        alert("Инвайт код:\n" + res.code);
+      } catch(e) { setStatus("Ошибка: " + e.message); }
     };
 
-    document.getElementById('btnAccept').onclick = async () => {
+    document.getElementById("btnAccept").onclick = async () => {
       try {
-        const code = document.getElementById('code').value.trim();
+        const code = document.getElementById("code").value.trim();
         if (!code) return;
-        await api(`/api/accept?user_id=${encodeURIComponent(userId)}&code=${encodeURIComponent(code)}`, { method:'POST', body:'{}' });
-        setStatus('✅ Принято. Обновляю...');
+        await api(`/api/accept?user_id=${encodeURIComponent(userId)}&code=${encodeURIComponent(code)}`, { method:"POST", body:"{}" });
+        setStatus("✅ Принято. Обновляю...");
         await refresh();
-      } catch(e) { setStatus('Ошибка: ' + e.message); }
+      } catch(e) { setStatus("Ошибка: " + e.message); }
     };
 
-    meChipEl.onclick = () => {
-      settingsEl.classList.toggle('active');
-      focusOn(userId);
-    };
-
-    document.addEventListener('click', (e) => {
-      if (!settingsEl.classList.contains('active')) return;
-      if (!settingsEl.contains(e.target) && e.target !== meChipEl && !meChipEl.contains(e.target)){
-        settingsEl.classList.remove('active');
-      }
-    });
-
-    refresh().catch(e => setStatus('Ошибка: ' + e.message));
+    refresh().catch(e => setStatus("Ошибка: " + e.message));
   </script>
 </body>
 </html>

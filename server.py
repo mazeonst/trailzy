@@ -17,7 +17,7 @@ from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton, WebAppIn
 # =========================
 BOT_TOKEN = os.getenv("BOT_TOKEN", "").strip()
 PORT = int(os.getenv("PORT", "8000"))
-WEBAPP_URL = os.getenv("WEBAPP_URL", "https://YOUR_DOMAIN/").strip()
+WEBAPP_URL = os.getenv("WEBAPP_URL", "https://mirmikov.com/").strip()
 
 if not BOT_TOKEN:
     raise SystemExit(
@@ -80,35 +80,16 @@ def index():
 @app.get("/api/me")
 def api_me(user_id: int):
     u = USERS.get(user_id, {"id": user_id, "name": "Unknown", "username": None})
-    return {
-        "id": user_id,
-        "name": u.get("name"),
-        "username": u.get("username"),
-        "avatar_url": u.get("avatar_url"),
-    }
-
-
-@app.get("/api/me-full")
-async def api_me_full(user_id: int):
-    await ensure_avatar(user_id)
-    u = USERS.get(user_id, {"id": user_id, "name": "Unknown", "username": None, "avatar_url": None})
-    return {
-        "id": user_id,
-        "name": u.get("name"),
-        "username": u.get("username"),
-        "avatar_url": u.get("avatar_url"),
-        "location": LOCATIONS.get(user_id),
-    }
+    return {"id": user_id, "name": u.get("name"), "username": u.get("username")}
 
 @app.get("/api/friends")
 def api_friends(user_id: int):
     return {"friends": sorted(list(FRIENDS.get(user_id, set())))}
 
 @app.get("/api/friends-full")
-async def api_friends_full(user_id: int):
+def api_friends_full(user_id: int):
     friends = []
     for fid in sorted(FRIENDS.get(user_id, set())):
-        await ensure_avatar(fid)
         u = USERS.get(fid, {"id": fid, "name": "Unknown", "username": None, "avatar_url": None})
         loc = LOCATIONS.get(fid)
         friends.append({
@@ -121,14 +102,13 @@ async def api_friends_full(user_id: int):
     return {"friends": friends}
 
 @app.get("/api/friends-locations")
-async def api_friends_locations(user_id: int):
+def api_friends_locations(user_id: int):
     friend_ids = FRIENDS.get(user_id, set())
     res = []
     for fid in friend_ids:
         loc = LOCATIONS.get(fid)
         if not loc:
             continue
-        await ensure_avatar(fid)
         u = USERS.get(fid, {"id": fid, "name": "Unknown", "username": None, "avatar_url": None})
         res.append({
             "user_id": fid,
@@ -231,18 +211,7 @@ async def got_location(m: Message):
 # =========================
 async def run_bot():
     try:
-        while True:
-            try:
-                await dp.start_polling(bot)
-                break
-            except asyncio.CancelledError:
-                break
-            except Exception as exc:
-                print(
-                    "⚠️ Bot polling stopped: "
-                    f"{exc}. API продолжает работать, пытаюсь переподключиться через 5 сек..."
-                )
-                await asyncio.sleep(5)
+        await dp.start_polling(bot)
     finally:
         # Ensure aiohttp session is closed even on cancellation or errors
         await bot.session.close()
