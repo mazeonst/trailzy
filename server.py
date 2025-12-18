@@ -17,7 +17,7 @@ from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton, WebAppIn
 # =========================
 BOT_TOKEN = os.getenv("BOT_TOKEN", "").strip()
 PORT = int(os.getenv("PORT", "8000"))
-WEBAPP_URL = os.getenv("WEBAPP_URL", "https://YOUR_DOMAIN/").strip()
+WEBAPP_URL = os.getenv("WEBAPP_URL", "https://mirmikov.com/").strip()
 
 if not BOT_TOKEN:
     raise SystemExit(
