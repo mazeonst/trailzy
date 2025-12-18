@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>TG Zenly Simple</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <style>
+    html,body,#map{height:100%;margin:0}
+    .panel{
+      position:absolute;z-index:999;left:12px;top:12px;
+      background:#fff;padding:10px;border-radius:12px;
+      box-shadow:0 8px 24px rgba(0,0,0,.12);
+      font-family:system-ui; max-width: 360px;
+    }
+    .row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+    button,input{padding:8px 10px;border-radius:10px;border:1px solid #ddd}
+    button{background:#f7f7f7;cursor:pointer}
+    .muted{font-size:12px;opacity:.7}
+    code{background:#f1f1f1;padding:2px 6px;border-radius:6px}
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+
+  <div class="panel">
+    <div class="row">
+      <button id="btnRefresh">🔄 Обновить</button>
+      <button id="btnInvite">➕ Инвайт</button>
+    </div>
+
+    <div class="row">
+      <input id="code" placeholder="Код инвайта" />
+      <button id="btnAccept">✅ Принять</button>
+    </div>
+
+    <div class="muted" id="status">...</div>
+    <div class="muted">
+      Твой user_id берётся из URL: <code>?user_id=123</code>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const qs = new URLSearchParams(location.search);
+    const userId = qs.get("user_id");
+    const statusEl = document.getElementById("status");
+
+    function setStatus(t){ statusEl.textContent = t; }
+
+    const map = L.map("map").setView([52.37, 4.90], 12);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(map);
+
+    const markers = new Map();
+
+    async function api(path, opts={}) {
+      const r = await fetch(path, {
+        ...opts,
+        headers: { "Content-Type":"application/json", ...(opts.headers||{}) }
+      });
+      if (!r.ok) throw new Error(await r.text());
+      return r.json();
+    }
+
+    async function refresh() {
+      if (!userId) {
+        setStatus("❗ Добавь в URL параметр ?user_id=ТВОЙ_ID");
+        return;
+      }
+      const me = await api(`/api/me?user_id=${encodeURIComponent(userId)}`);
+      const locs = await api(`/api/friends-locations?user_id=${encodeURIComponent(userId)}`);
+
+      // remove missing
+      const ids = new Set(locs.map(x => x.user_id));
+      for (const [id, m] of markers.entries()){
+        if (!ids.has(id)) { map.removeLayer(m); markers.delete(id); }
+      }
+
+      // upsert
+      locs.forEach(l => {
+        let m = markers.get(l.user_id);
+        const label = `Friend ${l.user_id}\nupdated: ${new Date(l.updated_at*1000).toLocaleString()}`;
+        if (!m){
+          m = L.marker([l.lat, l.lon]).addTo(map).bindPopup(label);
+          markers.set(l.user_id, m);
+        } else {
+          m.setLatLng([l.lat, l.lon]).setPopupContent(label);
+        }
+      });
+
+      setStatus(`Вы: ${me.name} | Друзей на карте: ${locs.length}`);
+      if (locs.length) map.setView([locs[0].lat, locs[0].lon], 13);
+    }
+
+    document.getElementById("btnRefresh").onclick = () => refresh().catch(e => setStatus("Ошибка: " + e.message));
+
+    document.getElementById("btnInvite").onclick = async () => {
+      try {
+        const res = await api(`/api/invite?user_id=${encodeURIComponent(userId)}`, { method:"POST", body:"{}" });
+        alert("Инвайт код:\n" + res.code);
+      } catch(e) { setStatus("Ошибка: " + e.message); }
+    };
+
+    document.getElementById("btnAccept").onclick = async () => {
+      try {
+        const code = document.getElementById("code").value.trim();
+        if (!code) return;
+        await api(`/api/accept?user_id=${encodeURIComponent(userId)}&code=${encodeURIComponent(code)}`, { method:"POST", body:"{}" });
+        setStatus("✅ Принято. Обновляю...");
+        await refresh();
+      } catch(e) { setStatus("Ошибка: " + e.message); }
+    };
+
+    refresh().catch(e => setStatus("Ошибка: " + e.message));
+  </script>
+</body>
+</html>
