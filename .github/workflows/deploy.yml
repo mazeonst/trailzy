@@ -20,18 +20,16 @@ jobs:
           port: 22
           protocol: tcp4
           key: ${{ secrets.VM_SSH_KEY }}
-          fingerprint: "SHA256:WxRhDifqHwHeW41bGyVcc+H9tDlVlmhxIsSwZ5+pVwc"
           debug: true
           script: |
             set -euo pipefail
 
             echo "== whoami =="; whoami
             echo "== hostname =="; hostname
-            echo "== pwd before =="; pwd
 
             cd "${{ secrets.VM_PROJECT_PATH }}"
-            echo "== pwd after =="; pwd
-            echo "== git status =="; git status -sb || true
+            echo "== pwd =="; pwd
+            echo "== git =="; git status -sb || true
 
             git fetch --all --prune
             git reset --hard origin/main
