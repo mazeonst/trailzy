@@ -1,2 +1,2 @@
-# trailzy
+# trailz
 # deploy test
