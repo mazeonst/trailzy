@@ -19,7 +19,7 @@ jobs:
           username: ${{ secrets.VM_USER }}
           port: 22
           key: ${{ secrets.VM_SSH_KEY }}
-          fingerprint: "SHA256:aktUfqaAtSecDQzZjFKqOfAhR4vT1R+wTi8C/53h+oY"
+          fingerprint: "SHA256:WxRhDifqHwHeW41bGyVcc+H9tDlVlmhxIsSwZ5+pVwc"
           debug: true
           script: |
             set -euo pipefail
