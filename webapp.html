@@ -7,49 +7,189 @@
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <style>
-    html,body,#map{height:100%;margin:0}
-    .panel{
-      position:absolute;z-index:999;left:12px;top:12px;
-      background:#fff;padding:10px;border-radius:12px;
-      box-shadow:0 8px 24px rgba(0,0,0,.12);
-      font-family:system-ui; max-width: 360px;
+    :root {
+      --bg: #ffffff;
+      --text: #0f172a;
+      --muted: #6b7280;
+      --card: #ffffff;
+      --border: #e5e7eb;
+      --shadow: 0 10px 40px rgba(0,0,0,.12);
+      --accent: #2563eb;
     }
-    .row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
-    button,input{padding:8px 10px;border-radius:10px;border:1px solid #ddd}
-    button{background:#f7f7f7;cursor:pointer}
-    .muted{font-size:12px;opacity:.7}
-    code{background:#f1f1f1;padding:2px 6px;border-radius:6px}
-    .friends{display:flex;flex-direction:column;gap:8px;max-height:260px;overflow:auto;margin-top:6px}
-    .friend{display:flex;align-items:center;gap:10px;padding:8px;border:1px solid #eee;border-radius:10px;cursor:pointer;transition:.15s background}
-    .friend:hover{background:#f5f7fb}
-    .friend__avatar{width:42px;height:42px;border-radius:50%;object-fit:cover;border:1px solid #e4e4e4;flex-shrink:0}
+
+    [data-theme="dark"] {
+      --bg: #0f172a;
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --card: #111827;
+      --border: #1f2937;
+      --shadow: 0 10px 40px rgba(0,0,0,.4);
+      --accent: #60a5fa;
+    }
+
+    * { box-sizing: border-box; }
+    html,body { height:100%; margin:0; background: var(--bg); color: var(--text); font-family: "Inter", system-ui, -apple-system, sans-serif; }
+    #map { height:100%; }
+
+    .layout {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+
+    .panel {
+      position:absolute;z-index:999;left:12px;top:12px;
+      background:var(--card);padding:12px;border-radius:14px;
+      box-shadow:var(--shadow);
+      border:1px solid var(--border);
+      max-width: 380px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+
+    .panel__header {
+      display:flex;
+      align-items:center;
+      gap:8px;
+      justify-content:space-between;
+    }
+
+    .title {
+      font-weight:700;
+      letter-spacing:-0.02em;
+      display:flex;
+      align-items:center;
+      gap:6px;
+    }
+
+    .title small { color: var(--muted); font-weight:500; }
+
+    .pill {
+      padding:6px 10px;
+      background: rgba(37, 99, 235, 0.08);
+      color: var(--accent);
+      border-radius: 999px;
+      border: 1px solid rgba(37, 99, 235, 0.12);
+      font-size:12px;
+    }
+
+    .row {display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+    button,input,select {padding:9px 11px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text);}
+    button {cursor:pointer; transition: all .15s ease;}
+    button:hover { border-color: var(--accent); color: var(--accent); }
+    .muted {font-size:12px;color:var(--muted);}
+    code{background:rgba(15,23,42,.06);padding:2px 6px;border-radius:6px;color:var(--text);}
+    .friends{display:flex;flex-direction:column;gap:8px;max-height:240px;overflow:auto;margin-top:2px}
+    .friend{display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--border);border-radius:12px;cursor:pointer;transition:.15s background, .15s border-color}
+    .friend:hover{background:rgba(37,99,235,.05);border-color:rgba(37,99,235,.18)}
+    .friend.active{border-color: var(--accent); box-shadow: 0 4px 12px rgba(37,99,235,.18);}
+    .friend__avatar{width:44px;height:44px;border-radius:50%;object-fit:cover;border:1px solid var(--border);flex-shrink:0}
     .friend__title{font-weight:600;font-size:14px}
-    .friend__subtitle{font-size:12px;color:#555}
-    .friend__status{margin-left:auto;font-size:12px;color:#777}
-    .avatar-icon{border-radius:50%;border:2px solid #fff;box-shadow:0 4px 12px rgba(0,0,0,.25);object-fit:cover}
+    .friend__subtitle{font-size:12px;color:var(--muted)}
+    .friend__status{margin-left:auto;font-size:12px;color:var(--muted);text-align:right}
+    .avatar-icon{border-radius:50%;border:2px solid var(--card);box-shadow:0 4px 12px rgba(0,0,0,.25);object-fit:cover}
+
+    .section-title { font-weight:600; margin-top:4px; display:flex; align-items:center; gap:6px; }
+
+    .settings { border:1px dashed var(--border); border-radius:12px; padding:10px; display:flex; flex-direction:column; gap:8px; }
+    .setting-row { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .setting-row .label { font-weight:600; }
+    .setting-row small { color: var(--muted); display:block; }
+
+    .toggle { position: relative; width: 44px; height: 24px; border-radius: 999px; background: var(--border); transition: background .2s; cursor: pointer; flex-shrink:0; }
+    .toggle::after { content:""; position:absolute; width:20px; height:20px; top:2px; left:2px; background:#fff; border-radius:50%; box-shadow:0 2px 6px rgba(0,0,0,.2); transition: transform .2s; }
+    .toggle.on { background: var(--accent); }
+    .toggle.on::after { transform: translateX(20px); }
+
+    .controls { display:flex; gap:8px; flex-wrap:wrap; }
+    .controls button { flex:1; min-width:120px; }
+
+    .chips { display:flex; gap:8px; flex-wrap:wrap; }
+    .chip { padding:7px 10px; border-radius:10px; border:1px solid var(--border); cursor:pointer; font-weight:600; color: var(--muted); }
+    .chip.active { border-color: var(--accent); color: var(--accent); background: rgba(37,99,235,.08); }
+
+    .badge { padding:2px 8px; border-radius:8px; border:1px solid var(--border); font-size:11px; color: var(--muted); }
+
+    @media (max-width: 720px) {
+      .panel {
+        left: 0; right: 0; bottom:0; top:auto;
+        margin: 0 10px 10px 10px;
+        max-width: unset;
+        backdrop-filter: blur(12px);
+      }
+      .friends { max-height: 180px; }
+      .controls button { flex: 1 0 45%; }
+    }
   </style>
 </head>
 <body>
-  <div id="map"></div>
+  <div class="layout">
+    <div id="map"></div>
 
-  <div class="panel">
-    <div class="row">
-      <button id="btnRefresh">🔄 Обновить</button>
-      <button id="btnInvite">➕ Инвайт</button>
+    <div class="panel" id="panel">
+      <div class="panel__header">
+        <div class="title">TG Zenly <small>web</small></div>
+        <div class="pill" id="pillState">Загрузка...</div>
+      </div>
+
+      <div class="controls">
+        <button id="btnRefresh">🔄 Обновить</button>
+        <button id="btnInvite">➕ Инвайт</button>
+        <button id="btnSettings">⚙️ Настройки</button>
+      </div>
+
+      <div class="row">
+        <input id="code" placeholder="Код инвайта" />
+        <button id="btnAccept">✅ Принять</button>
+      </div>
+
+      <div class="muted" id="status">...</div>
+      <div class="muted">
+        Твой user_id берётся из URL: <code>?user_id=123</code>
+      </div>
+
+      <div class="settings" id="settings" hidden>
+        <div class="section-title">⚙️ Настройки</div>
+        <div class="setting-row">
+          <div>
+            <div class="label">Автообновление</div>
+            <small>Обновлять список и карту каждые N секунд</small>
+          </div>
+          <div class="row" style="gap:6px; align-items:center;">
+            <input type="number" id="refreshInterval" min="5" max="120" value="20" style="width:72px" />
+            <div class="toggle" id="toggleAuto"></div>
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <div>
+            <div class="label">Следить за другом</div>
+            <small>Автоприлипание к выбранному другу при обновлении</small>
+          </div>
+          <div class="toggle" id="toggleFollow"></div>
+        </div>
+
+        <div class="setting-row">
+          <div>
+            <div class="label">Показывать офлайн</div>
+            <small>Отображать друзей без локации в списке</small>
+          </div>
+          <div class="toggle" id="toggleOffline"></div>
+        </div>
+
+        <div class="setting-row" style="align-items:flex-start;">
+          <div>
+            <div class="label">Тема</div>
+            <small>Системная, светлая или тёмная</small>
+          </div>
+          <div class="chips" id="themeChips"></div>
+        </div>
+      </div>
+
+      <div class="section-title">👥 Твои друзья <span class="badge" id="friendsBadge">0</span></div>
+      <div id="friends" class="friends"></div>
     </div>
-
-    <div class="row">
-      <input id="code" placeholder="Код инвайта" />
-      <button id="btnAccept">✅ Принять</button>
-    </div>
-
-    <div class="muted" id="status">...</div>
-    <div class="muted">
-      Твой user_id берётся из URL: <code>?user_id=123</code>
-    </div>
-
-    <div class="muted" style="margin-top:6px">Твои друзья</div>
-    <div id="friends" class="friends"></div>
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -58,8 +198,22 @@
     const userId = qs.get("user_id");
     const statusEl = document.getElementById("status");
     const friendsEl = document.getElementById("friends");
+    const pillState = document.getElementById("pillState");
+    const friendsBadge = document.getElementById("friendsBadge");
+    const settingsEl = document.getElementById("settings");
+    const settingsBtn = document.getElementById("btnSettings");
+    const themeChips = document.getElementById("themeChips");
+    const toggleAuto = document.getElementById("toggleAuto");
+    const toggleFollow = document.getElementById("toggleFollow");
+    const toggleOffline = document.getElementById("toggleOffline");
+    const refreshIntervalInput = document.getElementById("refreshInterval");
 
-    function setStatus(t){ statusEl.textContent = t; }
+    const STORAGE_KEY = "tgzenly_settings_v1";
+    const defaultSettings = { autoRefresh: true, followFriend: true, showOffline: true, refreshInterval: 20, theme: "system" };
+    let settings = { ...defaultSettings };
+    let selectedFriendId = null;
+    let refreshTimer = null;
+    let lastFriends = [];
 
     const map = L.map("map").setView([52.37, 4.90], 12);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(map);
@@ -78,22 +232,66 @@
       return r.json();
     }
 
+    function setStatus(t){ statusEl.textContent = t; pillState.textContent = t; }
+
+    function loadSettings(){
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) settings = { ...settings, ...JSON.parse(saved) };
+      } catch(e) {}
+      applySettingsUI();
+      applyTheme(settings.theme);
+    }
+
+    function saveSettings(){
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+    }
+
+    function applyTheme(theme){
+      let resolved = theme;
+      if (theme === "system"){
+        resolved = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      }
+      document.documentElement.setAttribute("data-theme", resolved);
+    }
+
+    function applySettingsUI(){
+      toggleAuto.classList.toggle("on", settings.autoRefresh);
+      toggleFollow.classList.toggle("on", settings.followFriend);
+      toggleOffline.classList.toggle("on", settings.showOffline);
+      refreshIntervalInput.value = settings.refreshInterval;
+
+      themeChips.innerHTML = "";
+      ["system","light","dark"].forEach(mode => {
+        const chip = document.createElement("div");
+        chip.className = "chip" + (settings.theme === mode ? " active" : "");
+        chip.textContent = mode === "system" ? "Системная" : (mode === "light" ? "Светлая" : "Тёмная");
+        chip.onclick = () => { settings.theme = mode; applySettingsUI(); applyTheme(mode); saveSettings(); };
+        themeChips.appendChild(chip);
+      });
+    }
+
     function renderFriends(friends){
+      lastFriends = friends;
       friendsEl.innerHTML = "";
-      if (!friends.length){
+      const visible = settings.showOffline ? friends : friends.filter(f => !!f.location);
+      friendsBadge.textContent = visible.length;
+      if (!visible.length){
         friendsEl.innerHTML = '<div class="muted">Друзей пока нет.</div>';
         return;
       }
 
-      friends.forEach(f => {
+      visible.forEach(f => {
         const el = document.createElement("div");
-        el.className = "friend";
+        el.className = "friend" + (selectedFriendId === f.id ? " active" : "");
         el.onclick = () => {
           const marker = markers.get(f.id);
           if (marker){
             map.setView(marker.getLatLng(), 14);
             marker.openPopup();
           }
+          selectedFriendId = f.id;
+          renderFriends(friends);
         };
 
         const img = document.createElement("img");
@@ -115,7 +313,7 @@
 
         const status = document.createElement("div");
         status.className = "friend__status";
-        status.textContent = f.location ? "🟢 на карте" : "⚪ нет локации";
+        status.textContent = f.location ? `🟢 ${new Date(f.location.updated_at*1000).toLocaleTimeString()}` : "⚪ нет локации";
         el.appendChild(status);
 
         friendsEl.appendChild(el);
@@ -144,13 +342,11 @@
       const friends = await api(`/api/friends-full?user_id=${encodeURIComponent(userId)}`);
       const locs = friends.friends.filter(f => !!f.location);
 
-      // remove missing
       const ids = new Set(locs.map(x => x.id));
       for (const [id, m] of markers.entries()){
         if (!ids.has(id)) { map.removeLayer(m); markers.delete(id); }
       }
 
-      // upsert
       locs.forEach(l => {
         let m = markers.get(l.id);
         const label = makeLabel(l);
@@ -164,10 +360,28 @@
 
       renderFriends(friends.friends);
       setStatus(`Вы: ${me.name} | Друзей на карте: ${locs.length}`);
-      if (locs.length) map.setView([locs[0].location.lat, locs[0].location.lon], 13);
+
+      if (selectedFriendId && settings.followFriend){
+        const chosen = locs.find(x => x.id === selectedFriendId);
+        if (chosen){ map.setView([chosen.location.lat, chosen.location.lon], 13); }
+      } else if (locs.length) {
+        map.setView([locs[0].location.lat, locs[0].location.lon], 13);
+      }
+
+      scheduleRefresh();
     }
 
-    document.getElementById("btnRefresh").onclick = () => refresh().catch(e => setStatus("Ошибка: " + e.message));
+    function scheduleRefresh(){
+      clearTimeout(refreshTimer);
+      if (!settings.autoRefresh) return;
+      const ms = Math.max(5, Number(settings.refreshInterval) || 20) * 1000;
+      refreshTimer = setTimeout(() => refresh().catch(e => setStatus("Ошибка: " + e.message)), ms);
+    }
+
+    document.getElementById("btnRefresh").onclick = () => {
+      clearTimeout(refreshTimer);
+      refresh().catch(e => setStatus("Ошибка: " + e.message));
+    };
 
     document.getElementById("btnInvite").onclick = async () => {
       try {
@@ -186,7 +400,34 @@
       } catch(e) { setStatus("Ошибка: " + e.message); }
     };
 
-    refresh().catch(e => setStatus("Ошибка: " + e.message));
+    settingsBtn.onclick = () => {
+      const isHidden = settingsEl.hasAttribute("hidden");
+      if (isHidden) settingsEl.removeAttribute("hidden");
+      else settingsEl.setAttribute("hidden", "hidden");
+    };
+
+    toggleAuto.onclick = () => {
+      settings.autoRefresh = !settings.autoRefresh;
+      applySettingsUI();
+      saveSettings();
+      scheduleRefresh();
+    };
+    toggleFollow.onclick = () => { settings.followFriend = !settings.followFriend; applySettingsUI(); saveSettings(); };
+    toggleOffline.onclick = () => { settings.showOffline = !settings.showOffline; applySettingsUI(); saveSettings(); renderFriends(lastFriends || []); };
+    refreshIntervalInput.onchange = (e) => {
+      const v = Number(e.target.value) || 20;
+      settings.refreshInterval = Math.min(Math.max(5, v), 300);
+      applySettingsUI();
+      saveSettings();
+      scheduleRefresh();
+    };
+
+    async function init(){
+      loadSettings();
+      await refresh();
+    }
+
+    init().catch(e => setStatus("Ошибка: " + e.message));
   </script>
 </body>
 </html>
