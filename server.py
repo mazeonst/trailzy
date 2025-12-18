@@ -28,7 +28,7 @@ if not BOT_TOKEN:
 # =========================
 # IN-MEMORY STORAGE (MVP)
 # =========================
-USERS: Dict[int, Dict[str, Any]] = {}        # user_id -> {name, username
+USERS: Dict[int, Dict[str, Any]] = {}        # user_id -> {name, username}
 LOCATIONS: Dict[int, Dict[str, Any]] = {}    # user_id -> {lat, lon, updated_at, is_live}
 FRIENDS: Dict[int, set[int]] = {}            # user_id -> set(friend_id)
 INVITES: Dict[str, int] = {}                 # code -> owner_id
