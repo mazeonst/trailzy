@@ -1,6 +1,7 @@
 import os
 import time
 import asyncio
+import contextlib
 from typing import Dict, Any, Optional
 
 from fastapi import FastAPI
@@ -206,16 +207,35 @@ async def got_location(m: Message):
 # RUN BOTH: FastAPI + Bot polling
 # =========================
 async def run_bot():
-    await dp.start_polling(bot)
+    try:
+        await dp.start_polling(bot)
+    finally:
+        # Ensure aiohttp session is closed even on cancellation or errors
+        await bot.session.close()
 
 async def run_api():
     import uvicorn
     config = uvicorn.Config(app, host="0.0.0.0", port=PORT, log_level="info")
     server = uvicorn.Server(config)
-    await server.serve()
+    try:
+        await server.serve()
+    except (OSError, SystemExit) as exc:
+        # Provide a friendlier error when the port is already in use
+        if getattr(exc, "errno", None) == 98 or "address already in use" in str(exc):
+            print(
+                f"❌ Порт {PORT} уже занят. Завершаю.\n"
+                "Подними другой экземпляр на другом порту: export PORT=8001"
+            )
+        raise
 
 async def main():
-    await asyncio.gather(run_api(), run_bot())
+    bot_task = asyncio.create_task(run_bot())
+    try:
+        await run_api()
+    finally:
+        bot_task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await bot_task
 
 if __name__ == "__main__":
     asyncio.run(main())
