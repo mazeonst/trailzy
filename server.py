@@ -1,6 +1,7 @@
 import os
 import time
 import asyncio
+import contextlib
 from typing import Dict, Any, Optional
 
 from fastapi import FastAPI
@@ -28,7 +29,7 @@ if not BOT_TOKEN:
 # =========================
 # IN-MEMORY STORAGE (MVP)
 # =========================
-USERS: Dict[int, Dict[str, Any]] = {}        # user_id -> {name, username}
+USERS: Dict[int, Dict[str, Any]] = {}        # user_id -> {name, username, avatar_url}
 LOCATIONS: Dict[int, Dict[str, Any]] = {}    # user_id -> {lat, lon, updated_at, is_live}
 FRIENDS: Dict[int, set[int]] = {}            # user_id -> set(friend_id)
 INVITES: Dict[str, int] = {}                 # code -> owner_id
@@ -39,6 +40,26 @@ def now_ts() -> int:
 def add_friend(a: int, b: int):
     FRIENDS.setdefault(a, set()).add(b)
     FRIENDS.setdefault(b, set()).add(a)
+
+
+async def ensure_avatar(user_id: int) -> Optional[str]:
+    """Fetch and cache user's avatar URL if missing."""
+
+    user = USERS.setdefault(user_id, {"id": user_id})
+    if user.get("avatar_url"):
+        return user.get("avatar_url")
+
+    try:
+        photos = await bot.get_user_profile_photos(user_id, limit=1)
+        if photos.total_count:
+            best = photos.photos[0][-1]
+            file = await bot.get_file(best.file_id)
+            user["avatar_url"] = f"https://api.telegram.org/file/bot{BOT_TOKEN}/{file.file_path}"
+            return user["avatar_url"]
+    except Exception:
+        # Если не получилось — просто ничего не кешируем
+        return None
+    return None
 
 # =========================
 # WEB (FastAPI)
@@ -64,6 +85,21 @@ def api_me(user_id: int):
 def api_friends(user_id: int):
     return {"friends": sorted(list(FRIENDS.get(user_id, set())))}
 
+@app.get("/api/friends-full")
+def api_friends_full(user_id: int):
+    friends = []
+    for fid in sorted(FRIENDS.get(user_id, set())):
+        u = USERS.get(fid, {"id": fid, "name": "Unknown", "username": None, "avatar_url": None})
+        loc = LOCATIONS.get(fid)
+        friends.append({
+            "id": fid,
+            "name": u.get("name"),
+            "username": u.get("username"),
+            "avatar_url": u.get("avatar_url"),
+            "location": loc,
+        })
+    return {"friends": friends}
+
 @app.get("/api/friends-locations")
 def api_friends_locations(user_id: int):
     friend_ids = FRIENDS.get(user_id, set())
@@ -72,12 +108,16 @@ def api_friends_locations(user_id: int):
         loc = LOCATIONS.get(fid)
         if not loc:
             continue
+        u = USERS.get(fid, {"id": fid, "name": "Unknown", "username": None, "avatar_url": None})
         res.append({
             "user_id": fid,
             "lat": loc["lat"],
             "lon": loc["lon"],
             "updated_at": loc["updated_at"],
             "is_live": loc.get("is_live", False),
+            "name": u.get("name"),
+            "username": u.get("username"),
+            "avatar_url": u.get("avatar_url"),
         })
     return res
 
@@ -116,7 +156,9 @@ async def start(m: Message):
         "id": m.from_user.id,
         "name": (m.from_user.full_name or "User"),
         "username": m.from_user.username,
+        "avatar_url": USERS.get(m.from_user.id, {}).get("avatar_url"),
     }
+    await ensure_avatar(m.from_user.id)
     await m.answer(
         "✅ Mini-Zenly (очень простой MVP)\n\n"
         "1) Нажми «📍 Отправить LIVE-локацию» и отправь геопозицию (лучше Live).\n"
@@ -150,7 +192,9 @@ async def got_location(m: Message):
         "id": m.from_user.id,
         "name": (m.from_user.full_name or "User"),
         "username": m.from_user.username,
+        "avatar_url": None,
     })
+    await ensure_avatar(m.from_user.id)
     LOCATIONS[m.from_user.id] = {
         "lat": loc.latitude,
         "lon": loc.longitude,
@@ -163,16 +207,35 @@ async def got_location(m: Message):
 # RUN BOTH: FastAPI + Bot polling
 # =========================
 async def run_bot():
-    await dp.start_polling(bot)
+    try:
+        await dp.start_polling(bot)
+    finally:
+        # Ensure aiohttp session is closed even on cancellation or errors
+        await bot.session.close()
 
 async def run_api():
     import uvicorn
     config = uvicorn.Config(app, host="0.0.0.0", port=PORT, log_level="info")
     server = uvicorn.Server(config)
-    await server.serve()
+    try:
+        await server.serve()
+    except (OSError, SystemExit) as exc:
+        # Provide a friendlier error when the port is already in use
+        if getattr(exc, "errno", None) == 98 or "address already in use" in str(exc):
+            print(
+                f"❌ Порт {PORT} уже занят. Завершаю.\n"
+                "Подними другой экземпляр на другом порту: export PORT=8001"
+            )
+        raise
 
 async def main():
-    await asyncio.gather(run_api(), run_bot())
+    bot_task = asyncio.create_task(run_bot())
+    try:
+        await run_api()
+    finally:
+        bot_task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await bot_task
 
 if __name__ == "__main__":
     asyncio.run(main())
