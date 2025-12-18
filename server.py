@@ -231,7 +231,18 @@ async def got_location(m: Message):
 # =========================
 async def run_bot():
     try:
-        await dp.start_polling(bot)
+        while True:
+            try:
+                await dp.start_polling(bot)
+                break
+            except asyncio.CancelledError:
+                break
+            except Exception as exc:
+                print(
+                    "⚠️ Bot polling stopped: "
+                    f"{exc}. API продолжает работать, пытаюсь переподключиться через 5 сек..."
+                )
+                await asyncio.sleep(5)
     finally:
         # Ensure aiohttp session is closed even on cancellation or errors
         await bot.session.close()
