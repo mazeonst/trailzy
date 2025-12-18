@@ -10,13 +10,14 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import CommandStart
-from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
+from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton, WebAppInfo
 
 # =========================
 # CONFIG
 # =========================
 BOT_TOKEN = os.getenv("BOT_TOKEN", "").strip()
 PORT = int(os.getenv("PORT", "8000"))
+WEBAPP_URL = os.getenv("WEBAPP_URL", "https://YOUR_DOMAIN/").strip()
 
 if not BOT_TOKEN:
     raise SystemExit(
@@ -144,7 +145,12 @@ dp = Dispatcher()
 
 kb = ReplyKeyboardMarkup(
     keyboard=[
-        [KeyboardButton(text="🗺 Открыть карту (на ПК)")],
+        [
+            KeyboardButton(
+                text="🗺 Открыть карту",
+                web_app=WebAppInfo(url=WEBAPP_URL),
+            )
+        ],
         [KeyboardButton(text="📍 Отправить LIVE-локацию")],
     ],
     resize_keyboard=True,
@@ -160,9 +166,9 @@ async def start(m: Message):
     }
     await ensure_avatar(m.from_user.id)
     await m.answer(
-        "✅ trailzy (очень простой MVP)\n\n"
+        "✅ Mini-Zenly (очень простой MVP)\n\n"
         "1) Нажми «📍 Отправить LIVE-локацию» и отправь геопозицию (лучше Live).\n"
-        "2) Нажми «🗺 Открыть карту (на ПК)» и открой ссылку на компьютере.\n\n"
+        "2) Нажми «🗺 Открыть карту» — это кнопка WebApp, откроется внутри Telegram.\n\n"
         "Друзья добавляются по инвайт-коду (в вебке).",
         reply_markup=kb
     )
@@ -174,15 +180,12 @@ async def howto(m: Message):
         "Я буду сохранять последнюю точку."
     )
 
-@dp.message(F.text == "🗺 Открыть карту (на ПК)")
+@dp.message(F.text == "🗺 Открыть карту")
 async def open_map(m: Message):
-    # localhost откроется только на том же устройстве.
     await m.answer(
-        "Открой на компьютере:\n"
-        f"http://localhost:{PORT}/\n\n"
-        f"И добавь параметр ?user_id={m.from_user.id}\n"
-        f"Например:\n"
-        f"http://localhost:{PORT}/?user_id={m.from_user.id}"
+        "Карта открывается как Telegram WebApp (кнопка выше).\n"
+        "Нужен публичный https-домен в WEBAPP_URL, иначе кнопка не откроется.\n\n"
+        f"Текущий WEBAPP_URL: {WEBAPP_URL}"
     )
 
 @dp.message(F.location)

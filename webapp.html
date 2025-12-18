@@ -6,6 +6,7 @@
   <title>TG Zenly Simple</title>
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     html,body,#map{height:100%;margin:0}
     .panel{
@@ -44,9 +45,7 @@
     </div>
 
     <div class="muted" id="status">...</div>
-    <div class="muted">
-      Твой user_id берётся из URL: <code>?user_id=123</code>
-    </div>
+    <div class="muted">ID берётся из Telegram WebApp контекста.</div>
 
     <div class="muted" style="margin-top:6px">Твои друзья</div>
     <div id="friends" class="friends"></div>
@@ -54,8 +53,14 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    const qs = new URLSearchParams(location.search);
-    const userId = qs.get("user_id");
+    const tg = window.Telegram?.WebApp;
+    tg?.ready();
+
+    const userId = tg?.initDataUnsafe?.user?.id;
+    const username = tg?.initDataUnsafe?.user?.username;
+    const name = [tg?.initDataUnsafe?.user?.first_name, tg?.initDataUnsafe?.user?.last_name]
+      .filter(Boolean)
+      .join(" ");
     const statusEl = document.getElementById("status");
     const friendsEl = document.getElementById("friends");
 
@@ -137,7 +142,7 @@
 
     async function refresh() {
       if (!userId) {
-        setStatus("❗ Добавь в URL параметр ?user_id=ТВОЙ_ID");
+        setStatus("❗ Открой через Telegram WebApp (кнопку в боте)");
         return;
       }
       const me = await api(`/api/me?user_id=${encodeURIComponent(userId)}`);
@@ -163,7 +168,8 @@
       });
 
       renderFriends(friends.friends);
-      setStatus(`Вы: ${me.name} | Друзей на карте: ${locs.length}`);
+      const meName = me.name || name || username || `ID ${userId}`;
+      setStatus(`Вы: ${meName} | Друзей на карте: ${locs.length}`);
       if (locs.length) map.setView([locs[0].location.lat, locs[0].location.lon], 13);
     }
 
