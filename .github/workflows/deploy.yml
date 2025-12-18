@@ -17,7 +17,7 @@ jobs:
         with:
           host: ${{ secrets.VM_HOST }}
           username: ${{ secrets.VM_USER }}
-          port: ${{ secrets.VM_PORT }}
+          port: 22
           key: ${{ secrets.VM_SSH_KEY }}
           script: |
             set -e
