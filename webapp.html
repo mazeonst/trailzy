@@ -70,7 +70,7 @@
       encodeURIComponent(`<?xml version="1.0"?><svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg"><rect width="120" height="120" rx="20" fill="#1d9bf0"/><text x="50%" y="52%" dominant-baseline="middle" text-anchor="middle" font-size="48" font-family="Arial" fill="white">👤</text></svg>`);
 
     async function api(path, opts={}) {
-      const r = await fetch(path, {
+      const r = await fetch("/trailzy" + path, {
         ...opts,
         headers: { "Content-Type":"application/json", ...(opts.headers||{}) }
       });
