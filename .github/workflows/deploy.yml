@@ -2,7 +2,7 @@ name: Deploy to DC2
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
 
 concurrency:
   group: deploy-main
@@ -19,16 +19,26 @@ jobs:
           username: ${{ secrets.VM_USER }}
           port: 22
           key: ${{ secrets.VM_SSH_KEY }}
+          fingerprint: "SHA256:aktUfqaAtSecDQzZjFKqOfAhR4vT1R+wTi8C/53h+oY"
+          debug: true
           script: |
-            set -e
-            cd ${{ secrets.VM_PROJECT_PATH }}
+            set -euo pipefail
 
-            git fetch --all
+            echo "== whoami =="; whoami
+            echo "== hostname =="; hostname
+            echo "== pwd before =="; pwd
+
+            cd "${{ secrets.VM_PROJECT_PATH }}"
+            echo "== pwd after =="; pwd
+            echo "== git status =="; git status -sb || true
+
+            git fetch --all --prune
             git reset --hard origin/main
 
             if [ ! -d ".venv" ]; then
               python3 -m venv .venv
             fi
+
             . .venv/bin/activate
             pip install --upgrade pip
             pip install -r requirements.txt
